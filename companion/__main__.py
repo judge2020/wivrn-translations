@@ -88,11 +88,15 @@ def main():
         engine = CaptionEngine(config["model"], tracker, translate_non_english=args.wayvr)
         overlay = None
         wayvr = None
+        separator = None
         if args.steamvr:
             from .steamvr import SteamOverlay
             overlay = SteamOverlay()
         try:
             host_audio = stream is not None or bool(args.monitor) or args.pcm_stdin
+            if args.wayvr and host_audio and tracker:
+                from .progressive import OverlapSeparator
+                separator = OverlapSeparator(args.speakers)
             with CaptionServer(config["host"], config["port"], engine, token, host_audio) as server:
                 if args.wayvr:
                     from .wayvr import WayVROverlay
@@ -103,12 +107,17 @@ def main():
                 if stream is not None or args.monitor:
                     process = capture_process(stream, args.monitor)
                 source = process.stdout if process else sys.stdin.buffer if args.pcm_stdin else None
-                if source:
+                if source and args.wayvr:
+                    from .progressive import stream_audio
+                    capture_worker = threading.Thread(
+                        target=stream_audio, args=(source, engine, tracker, separator, stopped),
+                    )
+                elif source:
                     capture_worker = threading.Thread(
                         target=capture_loop,
-                        args=(source, engine, config, stopped, args.pcm_stdin, not args.wayvr),
-                        daemon=True,
+                        args=(source, engine, config, stopped, args.pcm_stdin, True),
                     )
+                if capture_worker:
                     capture_worker.start()
                 try:
                     while not stopped.wait(0.2):

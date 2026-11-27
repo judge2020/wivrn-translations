@@ -91,7 +91,7 @@ class CaptionPanel(Gtk.Application):
             if latest != previous:
                 GLib.idle_add(self.render, latest)
                 previous = latest
-            self.stopped.wait(0.35)
+            self.stopped.wait(0.15)
 
     def render(self, captions):
         while child := self.rows.get_first_child():
@@ -113,7 +113,17 @@ class CaptionPanel(Gtk.Application):
                 heading.add_css_class(f"speaker-{(speaker - 1) % len(COLORS)}")
             row.append(heading)
 
-            text = Gtk.Label(label=caption["text"], xalign=0.0)
+            text = Gtk.Label(xalign=0.0)
+            stable = caption.get("stable_words")
+            if stable is None:
+                text.set_text(caption["text"])
+            else:
+                words = caption["text"].split()
+                prefix = GLib.markup_escape_text(" ".join(words[:stable]))
+                suffix = GLib.markup_escape_text(" ".join(words[stable:]))
+                text.set_markup(
+                    f'{prefix}{" " if prefix and suffix else ""}<span alpha="80%">{suffix}</span>'
+                )
             text.add_css_class("caption-text")
             text.set_max_width_chars(52)
             text.set_wrap(True)

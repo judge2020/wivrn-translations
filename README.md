@@ -43,7 +43,7 @@ sink, including other apps. `--pcm-stdin` accepts an external audio source as
 Copy [config.example.json](config.example.json) to `config.json` and add
 `--config config.json` to change settings. `language` can be `auto` or a source
 code such as `ja` or `es`. Use `"mode": "translate"` for English captions, or
-`"mode": "transcribe"` to preserve the spoken language. Captions arrive in
+`"mode": "transcribe"` to preserve the spoken language. Outside the Linux WayVR mode, captions arrive in
 batches of up to six seconds, plus inference time. Smaller chunks trade
 speaker and speech accuracy for responsiveness. If processing falls behind,
 live capture prioritizes the newest audio.
@@ -73,6 +73,23 @@ is active, the companion detects the source language for each speech turn,
 skips English speech, and translates other languages into English. Each
 speaker row shows the detected source language. The WayVR mode applies this
 automatically, regardless of the `language` and `mode` config settings.
+
+For Linux playback, WayVR refreshes each speaker's translation from a
+rolling audio window about every 0.8 seconds, plus inference time. New
+words appear as the speaker talks and the dimmer draft words can change
+as more context arrives. When the diarizer detects an overlap, the
+companion uses Conv-TasNet to split the mix into up to two voice tracks
+and translates them independently. Voice tracks are matched to recent
+speaker labels by voice similarity. Overlapping audio is an estimate;
+background noise, similar voices, and three or more simultaneous speakers
+can reduce accuracy.
+
+With `--speakers models`, the first WayVR run fetches the [ONNX
+separator](https://huggingface.co/iamdgarcia/ConvTasNet_Libri2Mix_sepnoisy_16k-onnx).
+For offline startup you can place `convtasnet_sepnoisy_16k.onnx` directly
+in the speaker model directory. The published model is CC BY-SA 4.0 and
+trained primarily on English mixtures. Separation of other languages works
+by voice acoustics and accuracy varies by recording.
 
 [WayVR setup and controls](https://github.com/wayvr-org/wayvr#first-start)
 
@@ -119,7 +136,7 @@ capture path and panel placement still need verification on Quest hardware.
 The speaker tracker uses local voice embeddings and a rolling audio window
 to estimate continuity between turns. `Speaker 1` means the first tracked
 voice in this session. A voice can be split across labels and similar voices
-can be merged. A detected overlap is shown separately when it yields text.
+can be merged. If overlap cannot be assigned to individual voices, it is labeled as overlapping speech.
 VRChat supplies mixed audio, so simultaneous words and avatar identities
 can be missing. By default, the companion holds a short caption history
 and recent speaker embeddings in memory. Linux capture prints transcript
@@ -165,6 +182,8 @@ does not put the app into that list. The release APK can be sideloaded directly.
 `speaker` is `null` when a voice cannot be assigned. `kind` is `speech`,
 `overlap`, or `unassigned`. `language` is the estimated source language, or
 the language pinned in settings. `timestamp` is the host's Unix time in seconds.
+For progressive WayVR rows, `stable_words` counts the leading words that
+matched the previous update. The remaining words are provisional.
 
 ## Build the APK
 

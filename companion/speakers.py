@@ -34,6 +34,7 @@ class SpeakerTracker:
         self.profiles = {}
         self.next_id = 1
         self.context = np.empty(0, dtype=np.float32)
+        self.offset = 0
         self.previous_turns = []
 
     def partition(self, audio):
@@ -55,7 +56,7 @@ class SpeakerTracker:
                 turns.append((start, end, speaker))
         return turns
 
-    def label(self, audio, turns, boundary):
+    def label(self, audio, turns, reference):
         clips = {}
         for start, end, speaker in turns:
             if speaker is not None:
@@ -63,9 +64,9 @@ class SpeakerTracker:
 
         overlap_scores = {}
         for start, end, speaker in turns:
-            if speaker is None or start >= boundary:
+            if speaker is None:
                 continue
-            for left, right, identity in self.previous_turns:
+            for left, right, identity in reference:
                 overlap = min(end, right) - max(start, left)
                 if overlap > 0:
                     pair = (speaker, identity)
@@ -81,55 +82,74 @@ class SpeakerTracker:
             speech = np.concatenate(samples)
             if len(speech) < SAMPLE_RATE * 0.85:
                 continue
-            stream = self.embedder.create_stream()
-            stream.accept_waveform(SAMPLE_RATE, speech)
-            stream.input_finished()
-            if not self.embedder.is_ready(stream):
+            vector = self.embedding(speech)
+            if vector is None:
                 continue
-            vector = np.asarray(self.embedder.compute(stream))
-            norm = np.linalg.norm(vector)
-            if not np.isfinite(norm) or norm == 0:
-                continue
-            vector /= norm
             identity = labels.get(speaker)
             if identity is None:
-                candidates = [
-                    (np.dot(previous, vector), key)
-                    for key, previous in self.profiles.items() if key not in matched
-                ]
-                similarity, key = max(candidates, default=(0, None))
-                if similarity >= 0.57:
-                    identity = key
-                else:
-                    identity = self.next_id
-                    self.next_id += 1
-            if identity in self.profiles:
-                vector = 0.8 * self.profiles.pop(identity) + 0.2 * vector
-                vector /= np.linalg.norm(vector)
-            self.profiles[identity] = vector
+                identity = self.match(vector, matched)
+            self.remember(identity, vector)
             matched.add(identity)
             labels[speaker] = identity
 
+        return labels
+
+    def embedding(self, audio):
+        stream = self.embedder.create_stream()
+        stream.accept_waveform(SAMPLE_RATE, audio)
+        stream.input_finished()
+        if not self.embedder.is_ready(stream):
+            return None
+        vector = np.asarray(self.embedder.compute(stream))
+        norm = np.linalg.norm(vector)
+        return vector / norm if np.isfinite(norm) and norm > 0 else None
+
+    def match(self, vector, excluded):
+        similarity, identity = max(
+            ((np.dot(previous, vector), key) for key, previous in self.profiles.items()
+             if key not in excluded),
+            default=(0, None),
+        )
+        if similarity >= 0.57:
+            return identity
+        identity = self.next_id
+        self.next_id += 1
+        return identity
+
+    def remember(self, identity, vector):
+        if identity in self.profiles:
+            vector = 0.8 * self.profiles.pop(identity) + 0.2 * vector
+            vector /= np.linalg.norm(vector)
+        self.profiles[identity] = vector
         while len(self.profiles) > 16:
             del self.profiles[next(iter(self.profiles))]
-        return labels
+
+    def track_window(self, audio, offset):
+        turns = self.partition(audio)
+        reference = [
+            (left - offset, right - offset, identity)
+            for left, right, identity in self.previous_turns if right > offset
+        ]
+        labels = self.label(audio, turns, reference)
+        self.previous_turns = [
+            (offset + start, offset + end, labels[speaker])
+            for start, end, speaker in turns if speaker in labels
+        ]
+        return [
+            (start, end, labels.get(speaker), "overlap" if speaker is None else "speech")
+            for start, end, speaker in turns
+        ]
 
     def split(self, audio):
         boundary = len(self.context)
         combined = np.concatenate((self.context, audio))
-        turns = self.partition(combined)
-        labels = self.label(combined, turns, boundary)
-        retained = max(0, len(combined) - 12 * SAMPLE_RATE)
-        self.context = combined[retained:]
-        self.previous_turns = [
-            (max(0, start - retained), end - retained, labels[speaker])
-            for start, end, speaker in turns if end > retained and speaker in labels
-        ]
+        turns = self.track_window(combined, self.offset)
+        discard = max(0, len(combined) - 12 * SAMPLE_RATE)
+        self.context = combined[discard:]
+        self.offset += discard
         result = []
-        for start, end, speaker in turns:
+        for start, end, speaker, kind in turns:
             start = max(start, boundary)
-            if end - start < SAMPLE_RATE * 0.55:
-                continue
-            kind = "overlap" if speaker is None else "speech"
-            result.append((labels.get(speaker), kind, combined[start:end]))
+            if end - start >= SAMPLE_RATE * 0.55:
+                result.append((speaker, kind, combined[start:end]))
         return result or [(None, "unassigned", audio)]
