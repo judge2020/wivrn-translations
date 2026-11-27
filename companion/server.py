@@ -112,11 +112,11 @@ class CaptionHandler(BaseHTTPRequestHandler):
         self.json(200, {"version": 1, "captions": captions})
 
 
-def load_config(path):
+def load_config(path, default_model="base"):
     config = {
         "host": "127.0.0.1",
         "port": 8765,
-        "model": "base",
+        "model": default_model,
         "language": "auto",
         "mode": "transcribe",
         "chunk_seconds": 6,

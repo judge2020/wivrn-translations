@@ -3,7 +3,7 @@
 WiVRn Translations transcribes incoming VRChat audio. The Linux companion runs multilingual
 speech recognition and optional speaker diarization locally. Its browser monitor
 and Android/Quest panel group captions into separate, color-coded speaker rows.
-The transparent WayVR overlay for WiVRn shows English translations for up to three speakers and labels the detected source language.
+The transparent WayVR overlay for WiVRn shows English translations of Portuguese speech for up to three speakers.
 
 ## Linux · capture VRChat playback
 
@@ -23,7 +23,7 @@ curl -fL https://github.com/k2-fsa/sherpa-onnx/releases/download/speaker-segment
 curl -fL https://github.com/k2-fsa/sherpa-onnx/releases/download/speaker-recongition-models/3dspeaker_speech_eres2net_base_sv_zh-cn_3dspeaker_16k.onnx   -o models/3dspeaker_speech_eres2net_base_sv_zh-cn_3dspeaker_16k.onnx
 ```
 
-The first run downloads the multilingual Whisper `base` model. Browse to
+The first run downloads a multilingual Whisper model. Browse to
 [the local monitor](http://127.0.0.1:8765).
 
 ```sh
@@ -69,10 +69,16 @@ position the window and enable **Always visible** if you want captions to
 stay up while the working set is hidden. Press Ctrl+C in the companion
 terminal to stop capture and close the window. The Linux overlay works
 with the WiVRn headset stream and requires no headset APK. When `--wayvr`
-is active, the companion detects the source language for each speech turn,
-skips English speech, and translates other languages into English. Each
-speaker row shows the detected source language. The WayVR mode applies this
-automatically, regardless of the `language` and `mode` config settings.
+is active, the companion detects the source language for each speech turn
+and translates confident Portuguese detections into English. Each speaker
+row is labeled **Portuguese**. Short or ambiguous clips may wait for more
+context. The overlay applies this automatically, regardless of the
+`language` and `mode` settings.
+
+WayVR uses the multilingual Whisper `small` model by default for Portuguese
+recognition. Set `"model": "base"` in the JSON config if you prefer quicker
+updates at the cost of some recognition accuracy. Other companion modes
+still default to `base`.
 
 For Linux playback, WayVR refreshes each speaker's translation from a
 rolling audio window about every 0.8 seconds, plus inference time. New

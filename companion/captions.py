@@ -8,17 +8,18 @@ from faster_whisper import WhisperModel
 
 SAMPLE_RATE = 16_000
 CAPTION_SECONDS = 15
+PORTUGUESE_MIN_CONFIDENCE = 0.50
 
 
 class CaptionEngine:
-    def __init__(self, model, speakers=None, translate_non_english=False):
+    def __init__(self, model, speakers=None, portuguese_only=False):
         self.model = WhisperModel(
             model, device="cpu", compute_type="int8",
-            cpu_threads=3 if translate_non_english else 4,
-            num_workers=2 if translate_non_english else 1,
+            cpu_threads=5 if portuguese_only else 4,
+            num_workers=2 if portuguese_only else 1,
         )
         self.speakers = speakers
-        self.translate_non_english = translate_non_english
+        self.portuguese_only = portuguese_only
         self.inference_lock = threading.Lock()
         self.caption_lock = threading.Lock()
         self.history = deque(maxlen=16)
@@ -36,14 +37,23 @@ class CaptionEngine:
             self.inference_lock.release()
 
     def decode(self, clip, language, mode, vad_filter):
-        if self.translate_non_english:
+        if self.portuguese_only:
             language, mode = "auto", "translate"
+        options = {}
+        if self.portuguese_only:
+            options = {
+                "without_timestamps": True,
+                "no_repeat_ngram_size": 4,
+            }
         segments, info = self.model.transcribe(
             clip, language=None if language == "auto" else language,
-            task=mode, beam_size=1, vad_filter=vad_filter, condition_on_previous_text=False,
-            temperature=0.0,
+            task=mode, beam_size=2 if self.portuguese_only else 1,
+            vad_filter=vad_filter, condition_on_previous_text=False, temperature=0.0,
+            **options,
         )
-        if self.translate_non_english and info.language == "en":
+        if self.portuguese_only and (
+            info.language != "pt" or info.language_probability < PORTUGUESE_MIN_CONFIDENCE
+        ):
             return "", info.language
         return " ".join(segment.text.strip() for segment in segments).strip(), info.language
 
@@ -55,7 +65,7 @@ class CaptionEngine:
             if text:
                 captions.append({
                     "text": text, "speaker": speaker, "kind": kind, "language": detected,
-                    "mode": "translate" if self.translate_non_english else mode,
+                    "mode": "translate" if self.portuguese_only else mode,
                 })
         return self.publish(captions)
 

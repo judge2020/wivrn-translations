@@ -62,7 +62,7 @@ def main():
     parser.add_argument("--config", help="Path to the companion JSON settings")
     parser.add_argument("--speakers", metavar="MODEL_DIRECTORY", help="Enable speaker diarization")
     display = parser.add_mutually_exclusive_group()
-    display.add_argument("--wayvr", action="store_true", help="Show non-English speech translated to English in the WiVRn overlay")
+    display.add_argument("--wayvr", action="store_true", help="Show Portuguese speech translated to English in the WiVRn overlay")
     display.add_argument("--steamvr", action="store_true", help="Display captions in the SteamVR compositor")
     audio = parser.add_mutually_exclusive_group()
     audio.add_argument("--list-streams", action="store_true", help="List Linux playback stream IDs")
@@ -80,12 +80,12 @@ def main():
             playback_streams()
             return 0
         stream = vrchat_stream() if args.vrchat else args.stream
-        config, token = load_config(args.config)
+        config, token = load_config(args.config, default_model="small" if args.wayvr else "base")
         tracker = None
         if args.speakers:
             from .speakers import SpeakerTracker
             tracker = SpeakerTracker(args.speakers)
-        engine = CaptionEngine(config["model"], tracker, translate_non_english=args.wayvr)
+        engine = CaptionEngine(config["model"], tracker, portuguese_only=args.wayvr)
         overlay = None
         wayvr = None
         separator = None
