@@ -75,7 +75,7 @@ public final class MainActivity extends Activity {
         scroll.addView(screen);
         setContentView(scroll);
 
-        TextView title = text("VRChat Live Captions", 34, INK);
+        TextView title = text("WiVRn Translations", 34, INK);
         title.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         screen.addView(title);
         status = text("Configure your companion to begin.", 15, MINT);

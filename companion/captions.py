@@ -11,9 +11,10 @@ CAPTION_SECONDS = 15
 
 
 class CaptionEngine:
-    def __init__(self, model, speakers=None):
+    def __init__(self, model, speakers=None, non_english_only=False):
         self.model = WhisperModel(model, device="cpu", compute_type="int8", cpu_threads=4)
         self.speakers = speakers
+        self.non_english_only = non_english_only
         self.inference_lock = threading.Lock()
         self.caption_lock = threading.Lock()
         self.history = deque(maxlen=16)
@@ -42,6 +43,8 @@ class CaptionEngine:
                 vad_filter=self.speakers is None or kind == "unassigned",
                 condition_on_previous_text=False,
             )
+            if self.non_english_only and info.language == "en":
+                continue
             text = " ".join(segment.text.strip() for segment in segments).strip()
             if not text:
                 continue

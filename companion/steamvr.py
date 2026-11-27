@@ -44,7 +44,7 @@ class SteamOverlay:
         openvr.init(openvr.VRApplication_Overlay)
         try:
             self.overlay = openvr.IVROverlay()
-            self.handle = self.overlay.createOverlay("sh.judge.singularity", "VRChat Live Captions")
+            self.handle = self.overlay.createOverlay("sh.judge.singularity", "WiVRn Translations")
             self.overlay.setOverlayWidthInMeters(self.handle, 0.9)
             transform = openvr.HmdMatrix34_t()
             for row, values in zip(transform.m, ((1, 0, 0, 0), (0, 1, 0, -0.32), (0, 0, 1, -1.15))):

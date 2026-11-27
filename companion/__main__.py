@@ -58,7 +58,7 @@ def capture_loop(source, engine, config, done, finite, print_captions):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Singularity live captions")
+    parser = argparse.ArgumentParser(description="WiVRn Translations")
     parser.add_argument("--config", help="Path to the companion JSON settings")
     parser.add_argument("--speakers", metavar="MODEL_DIRECTORY", help="Enable speaker diarization")
     display = parser.add_mutually_exclusive_group()
@@ -84,7 +84,7 @@ def main():
         if args.speakers:
             from .speakers import SpeakerTracker
             tracker = SpeakerTracker(args.speakers)
-        engine = CaptionEngine(config["model"], tracker)
+        engine = CaptionEngine(config["model"], tracker, non_english_only=args.wayvr)
         overlay = None
         wayvr = None
         if args.steamvr:
@@ -125,7 +125,7 @@ def main():
     except KeyboardInterrupt:
         pass
     except (OSError, ValueError, RuntimeError, ImportError) as error:
-        print(f"Singularity: {error}", file=sys.stderr)
+        print(f"WiVRn Translations: {error}", file=sys.stderr)
         return 1
     finally:
         stopped.set()

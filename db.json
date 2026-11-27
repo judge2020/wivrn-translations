@@ -3,13 +3,13 @@
   "modules": [
     {
       "id": "vrchat_live_captions",
-      "name": "VRChat Live Captions",
+      "name": "WiVRn Translations",
       "description": "Displays multilingual VRChat transcripts with separate speaker rows. Requires the Linux companion.",
       "author": "Hunter",
       "githubOwner": "judge2020",
-      "githubRepo": "singularity",
+      "githubRepo": "wivrn-translations",
       "assetSuffix": ".apk",
-      "assetNameContains": "vrchat-live-captions-",
+      "assetNameContains": "wivrn-translations-",
       "deviceFilter": "QUEST_PRO",
       "packageName": "sh.judge.singularity"
     }

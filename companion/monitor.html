@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>VRChat Live Captions</title>
+<title>WiVRn Translations</title>
 <style>
   :root { color-scheme: dark; font: 16px/1.5 system-ui, sans-serif; background: #111815; color: #edf4ef; }
   body { margin: 0; }
@@ -17,23 +17,15 @@
   article p { font-size: clamp(1.1rem, 3vw, 1.4rem); margin: 0; overflow-wrap: anywhere; unicode-bidi: plaintext; }
   article p + p { margin-top: 0.4rem; }
   #empty { color: #becdc3; }
-  .overlay main { width: auto; margin: 0.55rem 0.8rem; }
-  .overlay header { display: none; }
-  .overlay article, .overlay #empty { margin: 0 0 0.4rem; padding: 0.5rem 0.85rem; }
-  .overlay h2 { font-size: 1rem; margin-bottom: 0.1rem; }
-  .overlay article p { font-size: 1.45rem; line-height: 1.24; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
-  .overlay #empty { background: transparent; font-size: 1.12rem; }
 </style>
 </head>
 <body>
 <main>
-  <header><h1>VRChat Live Captions</h1><p id="status" role="status">Connecting to companion</p></header>
+  <header><h1>WiVRn Translations</h1><p id="status" role="status">Connecting to companion</p></header>
   <section id="captions" aria-label="Live captions" aria-live="polite"></section>
   <p id="empty">Waiting for speech</p>
 </main>
 <script>
-const overlay = location.pathname === '/overlay';
-if (overlay) document.body.classList.add('overlay');
 const status = document.querySelector('#status');
 const output = document.querySelector('#captions');
 const empty = document.querySelector('#empty');
@@ -50,20 +42,14 @@ function render(captions) {
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(caption);
   }
-  let grouped = [...groups];
-  if (overlay) {
-    const recent = new Set(grouped.sort((a, b) => b[1].at(-1).id - a[1].at(-1).id)
-      .slice(0, 3).map(([key]) => key));
-    grouped = [...groups].filter(([key]) => recent.has(key));
-  }
-  const entries = grouped.map(([key, turns]) => {
+  const entries = [...groups].map(([key, turns]) => {
     const known = typeof key === 'number';
     const article = document.createElement('article');
     article.style.setProperty('--speaker', known ? colors[(key - 1) % colors.length] : '#becdc3');
     const heading = document.createElement('h2');
     heading.textContent = known ? 'Speaker ' + key : (key === 'overlap' ? 'Overlapping speech' : 'Speech');
     article.append(heading);
-    for (const turn of overlay ? turns.slice(-1) : turns) {
+    for (const turn of turns) {
       const line = document.createElement('p');
       line.lang = turn.mode === 'translate' ? 'en' : turn.language;
       line.textContent = turn.text;
@@ -82,7 +68,7 @@ async function poll() {
     const { captions } = await response.json();
     render(captions);
     status.textContent = 'Live captions';
-    empty.textContent = overlay ? 'VRChat captions · Waiting for speech' : 'Waiting for speech';
+    empty.textContent = 'Waiting for speech';
   } catch {
     render([]);
     status.textContent = 'Connection interrupted';

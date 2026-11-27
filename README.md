@@ -1,9 +1,9 @@
-# VRChat Live Captions
+# WiVRn Translations
 
-VRChat Live Captions transcribes incoming VRChat audio. The Linux companion runs multilingual
+WiVRn Translations transcribes incoming VRChat audio. The Linux companion runs multilingual
 speech recognition and optional speaker diarization locally. Its browser monitor
 and Android/Quest panel group captions into separate, color-coded speaker rows.
-The WayVR overlay for WiVRn shows the latest caption for up to three speakers.
+The transparent WayVR overlay for WiVRn shows the latest non-English speech for up to three speakers.
 
 ## Linux · capture VRChat playback
 
@@ -12,8 +12,8 @@ PulseAudio client utilities (`pactl` and `parec`). The same commands work with
 PipeWire-Pulse if your session exposes the VRChat playback stream.
 
 ```sh
-git clone https://github.com/judge2020/singularity.git
-cd singularity
+git clone https://github.com/judge2020/wivrn-translations.git
+cd wivrn-translations
 python3.12 -m venv .venv
 . .venv/bin/activate
 pip install -r requirements-speakers.txt
@@ -53,19 +53,24 @@ live capture prioritizes the newest audio.
 ### WiVRn / WayVR
 
 Start WayVR through WiVRn and keep it running while playing VRChat. Install
-a native Chrome or Chromium browser. The companion uses `wayvrctl` to open
-a compact caption window directly inside WayVR's OpenXR overlay.
+the system GTK 4 and Python GObject packages (`gtk4` and `python3-gobject` on
+Fedora, or `gir1.2-gtk-4.0` and `python3-gi` on Debian/Ubuntu). The companion
+uses `wayvrctl` to open a transparent caption window inside WayVR's OpenXR
+overlay. The spaces between speaker captions are fully transparent and an
+idle window draws nothing.
 
 ```sh
 python -m companion --vrchat --speakers models --wayvr
 ```
 
 If the working set is hidden, open it with the WayVR toggle and select
-**VRChat Live Captions** from its taskbar. Use WayVR's **Edit mode** to
+**WiVRn Translations** from its taskbar. Use WayVR's **Edit mode** to
 position the window and enable **Always visible** if you want captions to
 stay up while the working set is hidden. Press Ctrl+C in the companion
 terminal to stop capture and close the window. The Linux overlay works
-with the WiVRn headset stream and requires no headset APK.
+with the WiVRn headset stream and requires no headset APK. When `--wayvr`
+is active, English speech is filtered out before captions are published.
+In translation mode, English translations of non-English speech still appear.
 
 [WayVR setup and controls](https://github.com/wayvr-org/wayvr#first-start)
 
@@ -84,9 +89,9 @@ fonts.
 
 ### Android / Quest Pro panel
 
-1. Download the APK from [Releases](https://github.com/judge2020/singularity/releases).
-   Sideload it in developer mode with `adb install vrchat-live-captions-0.1.1.apk` and
-   launch **VRChat Live Captions** from Unknown Sources. The app uses standard Android
+1. Download the APK from [Releases](https://github.com/judge2020/wivrn-translations/releases).
+   Sideload it in developer mode with `adb install wivrn-translations-0.1.2.apk` and
+   launch **WiVRn Translations** from Unknown Sources. The app uses standard Android
    APIs and requires no root privileges.
 2. Copy `config.example.json` to `config.json`, set `host` to `0.0.0.0`, and set
    a companion token with `export SINGULARITY_TOKEN="$(openssl rand -hex 32)"`.

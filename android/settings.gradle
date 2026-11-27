@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = 'Singularity'
+rootProject.name = 'WiVRn Translations'
 include ':app'

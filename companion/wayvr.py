@@ -1,10 +1,10 @@
-"""Open the local caption monitor inside WayVR's OpenXR compositor overlay."""
+"""Host the caption window in WayVR's OpenXR compositor overlay."""
 
 import json
+from pathlib import Path
 import shlex
 import shutil
 import subprocess
-from tempfile import TemporaryDirectory
 
 
 class WayVROverlay:
@@ -12,34 +12,26 @@ class WayVROverlay:
         self.control = shutil.which("wayvrctl")
         if not self.control:
             raise RuntimeError("Install WayVR and start it with WiVRn before using --wayvr.")
-        browser = next(
-            (path for name in ("google-chrome", "chromium", "chromium-browser", "brave-browser")
-             if (path := shutil.which(name))),
-            None,
-        )
-        if not browser:
-            raise RuntimeError("Install a native Chrome or Chromium browser for the WayVR caption window.")
 
-        self.profile = TemporaryDirectory(prefix="vrchat-captions-wayvr-")
-        arguments = shlex.join([
-            "--ozone-platform=wayland",
-            "--disable-background-mode",
-            "--no-first-run",
-            "--no-default-browser-check",
-            f"--user-data-dir={self.profile.name}",
-            f"--app=http://127.0.0.1:{port}/overlay",
-        ])
+        # The GTK bindings installed by Linux distributions use the system Python.
+        python = "/usr/bin/python3"
         try:
-            response = self.call(
-                "process-launch", "--name", "VRChat Live Captions",
-                browser, "1120x460", "floating", "", "--", arguments,
+            subprocess.run(
+                [python, "-c", "import gi; gi.require_version('Gtk', '4.0'); from gi.repository import Gtk"],
+                check=True, capture_output=True, timeout=5,
             )
-            self.handle = json.loads(response)
-            if not isinstance(self.handle, dict) or "user" not in self.handle:
-                raise ValueError("WayVR did not return a browser process handle.")
-        except Exception:
-            self.profile.cleanup()
-            raise
+        except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired) as error:
+            raise RuntimeError("Install Python's GObject bindings and GTK 4 for the WayVR panel.") from error
+
+        panel = Path(__file__).with_name("wayvr_panel.py").resolve()
+        response = self.call(
+            "process-launch", "--name", "WiVRn Translations",
+            "--env", "GDK_BACKEND=wayland,GSK_RENDERER=cairo",
+            python, "960x340", "floating", "", "--", shlex.join([str(panel), str(port)]),
+        )
+        self.handle = json.loads(response)
+        if not isinstance(self.handle, dict) or "user" not in self.handle:
+            raise ValueError("WayVR did not return a caption window process handle.")
 
     def call(self, *arguments):
         try:
@@ -54,5 +46,3 @@ class WayVROverlay:
             self.call("process-terminate", json.dumps(self.handle, separators=(",", ":")))
         except RuntimeError:
             pass
-        finally:
-            self.profile.cleanup()

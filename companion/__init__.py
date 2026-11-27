@@ -1,1 +1,1 @@
-"""Singularity live caption companion."""
+"""WiVRn Translations caption companion."""
