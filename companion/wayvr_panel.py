@@ -1,6 +1,7 @@
 """Transparent GTK window hosted by WayVR's Wayland compositor."""
 
 import json
+from pathlib import Path
 import sys
 import threading
 import urllib.request
@@ -8,6 +9,7 @@ import urllib.request
 import gi
 
 gi.require_version("Gtk", "4.0")
+gi.require_version("Gdk", "4.0")
 from gi.repository import Gdk, Gio, GLib, Gtk, Pango
 
 
@@ -28,6 +30,19 @@ window.caption-window {
 """ + "\n".join(f".speaker-{i} {{ color: {color}; }}" for i, color in enumerate(COLORS))
 
 
+def language_names():
+    try:
+        data = Path("/usr/share/iso-codes/json/iso_639-3.json").read_text(encoding="utf-8")
+    except OSError:
+        return {}
+    return {
+        entry[key]: entry.get("common_name", entry["name"])
+        for entry in json.loads(data)["639-3"]
+        for key in ("alpha_2", "alpha_3")
+        if key in entry
+    }
+
+
 class CaptionPanel(Gtk.Application):
     def __init__(self, port):
         super().__init__(
@@ -35,6 +50,7 @@ class CaptionPanel(Gtk.Application):
         )
         self.url = f"http://127.0.0.1:{port}/v1/latest"
         self.stopped = threading.Event()
+        self.languages = language_names()
 
     def do_activate(self):
         if self.get_active_window():
@@ -89,7 +105,9 @@ class CaptionPanel(Gtk.Application):
             row.set_halign(Gtk.Align.CENTER)
             row.add_css_class("caption-row")
 
-            heading = Gtk.Label(label=name, xalign=0.0)
+            code = caption["language"]
+            language = self.languages.get(code, code.upper())
+            heading = Gtk.Label(label=f"{name} · {language}", xalign=0.0)
             heading.add_css_class("speaker-label")
             if speaker:
                 heading.add_css_class(f"speaker-{(speaker - 1) % len(COLORS)}")

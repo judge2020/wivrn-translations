@@ -62,7 +62,7 @@ def main():
     parser.add_argument("--config", help="Path to the companion JSON settings")
     parser.add_argument("--speakers", metavar="MODEL_DIRECTORY", help="Enable speaker diarization")
     display = parser.add_mutually_exclusive_group()
-    display.add_argument("--wayvr", action="store_true", help="Open caption overlay in WayVR with WiVRn")
+    display.add_argument("--wayvr", action="store_true", help="Show non-English speech translated to English in the WiVRn overlay")
     display.add_argument("--steamvr", action="store_true", help="Display captions in the SteamVR compositor")
     audio = parser.add_mutually_exclusive_group()
     audio.add_argument("--list-streams", action="store_true", help="List Linux playback stream IDs")
@@ -73,6 +73,7 @@ def main():
     args = parser.parse_args()
 
     process = None
+    capture_worker = None
     stopped = threading.Event()
     try:
         if args.list_streams:
@@ -84,7 +85,7 @@ def main():
         if args.speakers:
             from .speakers import SpeakerTracker
             tracker = SpeakerTracker(args.speakers)
-        engine = CaptionEngine(config["model"], tracker, non_english_only=args.wayvr)
+        engine = CaptionEngine(config["model"], tracker, translate_non_english=args.wayvr)
         overlay = None
         wayvr = None
         if args.steamvr:
@@ -103,11 +104,12 @@ def main():
                     process = capture_process(stream, args.monitor)
                 source = process.stdout if process else sys.stdin.buffer if args.pcm_stdin else None
                 if source:
-                    threading.Thread(
+                    capture_worker = threading.Thread(
                         target=capture_loop,
                         args=(source, engine, config, stopped, args.pcm_stdin, not args.wayvr),
                         daemon=True,
-                    ).start()
+                    )
+                    capture_worker.start()
                 try:
                     while not stopped.wait(0.2):
                         if overlay:
@@ -115,6 +117,7 @@ def main():
                         if process and process.poll() is not None:
                             raise RuntimeError(f"Linux audio capture exited with status {process.returncode}.")
                 finally:
+                    stopped.set()
                     server.shutdown()
                     server_thread.join()
         finally:
@@ -136,6 +139,8 @@ def main():
             except subprocess.TimeoutExpired:
                 process.kill()
                 process.wait()
+        if capture_worker:
+            capture_worker.join()
     return 0
 
 

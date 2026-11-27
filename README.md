@@ -3,7 +3,7 @@
 WiVRn Translations transcribes incoming VRChat audio. The Linux companion runs multilingual
 speech recognition and optional speaker diarization locally. Its browser monitor
 and Android/Quest panel group captions into separate, color-coded speaker rows.
-The transparent WayVR overlay for WiVRn shows the latest non-English speech for up to three speakers.
+The transparent WayVR overlay for WiVRn shows English translations for up to three speakers and labels the detected source language.
 
 ## Linux · capture VRChat playback
 
@@ -57,7 +57,7 @@ the system GTK 4 and Python GObject packages (`gtk4` and `python3-gobject` on
 Fedora, or `gir1.2-gtk-4.0` and `python3-gi` on Debian/Ubuntu). The companion
 uses `wayvrctl` to open a transparent caption window inside WayVR's OpenXR
 overlay. The spaces between speaker captions are fully transparent and an
-idle window draws nothing.
+idle window draws nothing. Install `iso-codes` for full language names.
 
 ```sh
 python -m companion --vrchat --speakers models --wayvr
@@ -69,8 +69,10 @@ position the window and enable **Always visible** if you want captions to
 stay up while the working set is hidden. Press Ctrl+C in the companion
 terminal to stop capture and close the window. The Linux overlay works
 with the WiVRn headset stream and requires no headset APK. When `--wayvr`
-is active, English speech is filtered out before captions are published.
-In translation mode, English translations of non-English speech still appear.
+is active, the companion detects the source language for each speech turn,
+skips English speech, and translates other languages into English. Each
+speaker row shows the detected source language. The WayVR mode applies this
+automatically, regardless of the `language` and `mode` config settings.
 
 [WayVR setup and controls](https://github.com/wayvr-org/wayvr#first-start)
 
