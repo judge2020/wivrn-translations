@@ -1,6 +1,6 @@
-# Singularity
+# VRChat Live Captions
 
-Singularity captions incoming VRChat audio. The Linux companion runs multilingual
+VRChat Live Captions transcribes incoming VRChat audio. The Linux companion runs multilingual
 speech recognition and optional speaker diarization locally. Its browser monitor
 and Android/Quest panel group captions into separate, color-coded speaker rows.
 A head-locked SteamVR overlay shows the latest three turns.
@@ -67,8 +67,8 @@ desktop monitor or the Quest panel where Horizon OS permits multitasking.
 ### Android / Quest Pro panel
 
 1. Download the APK from [Releases](https://github.com/judge2020/singularity/releases).
-   Sideload it in developer mode with `adb install singularity-0.1.0.apk` and
-   launch **Singularity** from Unknown Sources. The app uses standard Android
+   Sideload it in developer mode with `adb install vrchat-live-captions-0.1.1.apk` and
+   launch **VRChat Live Captions** from Unknown Sources. The app uses standard Android
    APIs and requires no root privileges.
 2. Copy `config.example.json` to `config.json`, set `host` to `0.0.0.0`, and set
    a companion token with `export SINGULARITY_TOKEN="$(openssl rand -hex 32)"`.
@@ -83,7 +83,7 @@ For standalone VRChat running on the headset itself, start
 `python -m companion --config config.json --speakers models` without a Linux
 audio source. In the APK, choose **Capture VRChat playback** and accept the
 Android playback sharing prompt. If offered a choice, select the entire
-display. Singularity requests an audio-only stream limited to VRChat's app
+display. The app requests an audio-only stream limited to VRChat's app
 UID, with no video capture or microphone input. Android can only capture
 eligible audio usages when an app's capture policy permits it. Some Quest
 firmware or VRChat audio configurations may return silence. The APK's
@@ -99,6 +99,14 @@ VRChat supplies mixed audio, so simultaneous words and avatar identities
 can be missing. By default, the companion holds a short caption history
 and recent speaker embeddings in memory. Linux capture prints transcript
 lines to the terminal. The app does not send captions to VRChat's chatbox.
+
+## Lumince Singularity app catalog
+
+[db.json](db.json) follows the [Singularity Apps catalog schema](https://github.com/Lumince/Singularity-Apps-repo).
+The entry targets Quest Pro and resolves the APK from this repository's latest
+GitHub release. It can be included in a Singularity-style catalog. The Lumince
+app's standard Apps list loads the upstream catalog, so adding a file here
+does not put the app into that list. The release APK can be sideloaded directly.
 
 ## JSON interface
 

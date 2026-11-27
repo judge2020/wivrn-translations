@@ -10,7 +10,7 @@
     <application
         android:allowBackup="false"
         android:icon="@drawable/ic_caption"
-        android:label="Singularity"
+        android:label="VRChat Live Captions"
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="true">
         <activity android:name=".MainActivity" android:exported="true">

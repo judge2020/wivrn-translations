@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "modules": [
+    {
+      "id": "vrchat_live_captions",
+      "name": "VRChat Live Captions",
+      "description": "Displays multilingual VRChat transcripts with separate speaker rows. Requires the Linux companion.",
+      "author": "Hunter",
+      "githubOwner": "judge2020",
+      "githubRepo": "singularity",
+      "assetSuffix": ".apk",
+      "assetNameContains": "vrchat-live-captions-",
+      "deviceFilter": "QUEST_PRO",
+      "packageName": "sh.judge.singularity"
+    }
+  ]
+}

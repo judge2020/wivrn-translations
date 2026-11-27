@@ -90,7 +90,7 @@ public final class CaptureService extends Service {
         PendingIntent stop = PendingIntent.getService(this, 0, new Intent(this, CaptureService.class).setAction(STOP), flags);
         return new Notification.Builder(this, "capture")
                 .setSmallIcon(R.drawable.ic_caption)
-                .setContentTitle("Singularity is capturing eligible VRChat playback")
+                .setContentTitle("Capturing eligible VRChat playback")
                 .setContentIntent(open)
                 .setOngoing(true)
                 .addAction(new Notification.Action.Builder(null, "Stop", stop).build())
