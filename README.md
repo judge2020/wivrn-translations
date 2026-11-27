@@ -3,7 +3,7 @@
 VRChat Live Captions transcribes incoming VRChat audio. The Linux companion runs multilingual
 speech recognition and optional speaker diarization locally. Its browser monitor
 and Android/Quest panel group captions into separate, color-coded speaker rows.
-A head-locked SteamVR overlay shows the latest three turns.
+The WayVR overlay for WiVRn shows the latest caption for up to three speakers.
 
 ## Linux · capture VRChat playback
 
@@ -50,6 +50,25 @@ live capture prioritizes the newest audio.
 
 ## Display in VR
 
+### WiVRn / WayVR
+
+Start WayVR through WiVRn and keep it running while playing VRChat. Install
+a native Chrome or Chromium browser. The companion uses `wayvrctl` to open
+a compact caption window directly inside WayVR's OpenXR overlay.
+
+```sh
+python -m companion --vrchat --speakers models --wayvr
+```
+
+If the working set is hidden, open it with the WayVR toggle and select
+**VRChat Live Captions** from its taskbar. Use WayVR's **Edit mode** to
+position the window and enable **Always visible** if you want captions to
+stay up while the working set is hidden. Press Ctrl+C in the companion
+terminal to stop capture and close the window. The Linux overlay works
+with the WiVRn headset stream and requires no headset APK.
+
+[WayVR setup and controls](https://github.com/wayvr-org/wayvr#first-start)
+
 ### SteamVR
 
 With SteamVR running, add `--steamvr` to the Linux command:
@@ -61,8 +80,7 @@ python -m companion --vrchat --speakers models --steamvr
 
 VRChat must be visible through the SteamVR compositor for the head-locked
 panel to appear. For CJK caption glyphs, install your distro's Noto Sans CJK
-fonts. Direct OpenXR runtimes such as WiVRn without SteamVR can use the
-desktop monitor or the Quest panel where Horizon OS permits multitasking.
+fonts.
 
 ### Android / Quest Pro panel
 
@@ -98,7 +116,7 @@ can be merged. A detected overlap is shown separately when it yields text.
 VRChat supplies mixed audio, so simultaneous words and avatar identities
 can be missing. By default, the companion holds a short caption history
 and recent speaker embeddings in memory. Linux capture prints transcript
-lines to the terminal. The app does not send captions to VRChat's chatbox.
+lines to the terminal unless the WayVR overlay is active. The app does not send captions to VRChat's chatbox.
 
 ## Lumince Singularity app catalog
 

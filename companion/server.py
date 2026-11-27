@@ -52,10 +52,10 @@ class CaptionHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/health":
             self.json(200, {"version": 1, "status": "ready"})
-        elif self.path in ("/", "/v1/latest"):
+        elif self.path in ("/", "/overlay", "/v1/latest"):
             host = self.headers.get("Host", "").split(":", 1)[0]
             local = ipaddress.ip_address(self.client_address[0]).is_loopback and host in {"127.0.0.1", "localhost"}
-            if self.path == "/" and local:
+            if self.path in ("/", "/overlay") and local:
                 self.respond(200, MONITOR.read_bytes(), "text/html; charset=utf-8")
             elif self.path == "/v1/latest" and (local or self.authorized()):
                 self.json(200, {"version": 1, "captions": self.server.engine.current()})

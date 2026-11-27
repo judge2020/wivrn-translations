@@ -9,7 +9,7 @@ from .linux_audio import capture_process, playback_streams, vrchat_stream
 from .server import CaptionServer, load_config
 
 
-def capture_loop(source, engine, config, done, finite):
+def capture_loop(source, engine, config, done, finite, print_captions):
     size = config["chunk_seconds"] * SAMPLE_RATE * 2
     chunks = queue.Queue(maxsize=1)
 
@@ -50,6 +50,8 @@ def capture_loop(source, engine, config, done, finite):
             print(f"Transcription failed: {error}", file=sys.stderr)
             done.set()
             return
+        if not print_captions:
+            continue
         for caption in captions:
             speaker = f'Speaker {caption["speaker"]}' if caption["speaker"] else "Unassigned"
             print(f'{speaker} [{caption["language"]}] {caption["text"]}', flush=True)
@@ -59,7 +61,9 @@ def main():
     parser = argparse.ArgumentParser(description="Singularity live captions")
     parser.add_argument("--config", help="Path to the companion JSON settings")
     parser.add_argument("--speakers", metavar="MODEL_DIRECTORY", help="Enable speaker diarization")
-    parser.add_argument("--steamvr", action="store_true", help="Display captions in the SteamVR compositor")
+    display = parser.add_mutually_exclusive_group()
+    display.add_argument("--wayvr", action="store_true", help="Open caption overlay in WayVR with WiVRn")
+    display.add_argument("--steamvr", action="store_true", help="Display captions in the SteamVR compositor")
     audio = parser.add_mutually_exclusive_group()
     audio.add_argument("--list-streams", action="store_true", help="List Linux playback stream IDs")
     audio.add_argument("--vrchat", action="store_true", help="Find and capture the VRChat playback stream on Linux")
@@ -82,12 +86,16 @@ def main():
             tracker = SpeakerTracker(args.speakers)
         engine = CaptionEngine(config["model"], tracker)
         overlay = None
+        wayvr = None
         if args.steamvr:
             from .steamvr import SteamOverlay
             overlay = SteamOverlay()
         try:
             host_audio = stream is not None or bool(args.monitor) or args.pcm_stdin
             with CaptionServer(config["host"], config["port"], engine, token, host_audio) as server:
+                if args.wayvr:
+                    from .wayvr import WayVROverlay
+                    wayvr = WayVROverlay(config["port"])
                 server_thread = threading.Thread(target=server.serve_forever, daemon=True)
                 server_thread.start()
                 print(f'Caption monitor port {config["port"]} (local browser: http://127.0.0.1:{config["port"]})', flush=True)
@@ -97,7 +105,7 @@ def main():
                 if source:
                     threading.Thread(
                         target=capture_loop,
-                        args=(source, engine, config, stopped, args.pcm_stdin),
+                        args=(source, engine, config, stopped, args.pcm_stdin, not args.wayvr),
                         daemon=True,
                     ).start()
                 try:
@@ -112,6 +120,8 @@ def main():
         finally:
             if overlay:
                 overlay.close()
+            if wayvr:
+                wayvr.close()
     except KeyboardInterrupt:
         pass
     except (OSError, ValueError, RuntimeError, ImportError) as error:
