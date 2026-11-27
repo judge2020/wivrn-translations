@@ -1,0 +1,1 @@
+"""Singularity live caption companion."""

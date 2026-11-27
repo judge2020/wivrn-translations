@@ -1,0 +1,8 @@
+__pycache__/
+.venv/
+config.json
+android/.gradle/
+android/local.properties
+android/app/build/
+android/build/
+models/

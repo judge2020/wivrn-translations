@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Singularity · Live captions</title>
+<style>
+  :root { color-scheme: dark; font: 16px/1.5 system-ui, sans-serif; background: #111815; color: #edf4ef; }
+  body { margin: 0; }
+  main { width: min(54rem, calc(100% - 3rem)); margin: 3rem auto; }
+  header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0.5rem 1rem; border-bottom: 1px solid #3d4a42; padding-bottom: 1rem; }
+  h1 { font-size: clamp(1.7rem, 5vw, 2.5rem); margin: 0; letter-spacing: -0.045em; }
+  #status { margin: 0; color: #bdf3d7; }
+  article, #empty { margin-top: 1rem; background: #1b2620; border-radius: 0.75rem; padding: 1rem 1.25rem; }
+  article { border-inline-start: 0.25rem solid var(--speaker); }
+  h2 { margin: 0 0 0.4rem; font-size: 0.875rem; color: var(--speaker); }
+  article p { font-size: clamp(1.1rem, 3vw, 1.4rem); margin: 0; overflow-wrap: anywhere; unicode-bidi: plaintext; }
+  article p + p { margin-top: 0.4rem; }
+  #empty { color: #becdc3; }
+</style>
+</head>
+<body>
+<main>
+  <header><h1>Singularity</h1><p id="status" role="status">Connecting to companion</p></header>
+  <section id="captions" aria-label="Live captions" aria-live="polite"></section>
+  <p id="empty">Waiting for speech</p>
+</main>
+<script>
+const status = document.querySelector('#status');
+const output = document.querySelector('#captions');
+const empty = document.querySelector('#empty');
+const colors = ['#bdf3d7', '#b8d9ff', '#ffe0a2', '#fbcaf1', '#dcd1ff', '#ffc4ab'];
+let previous = '';
+
+function render(captions) {
+  const signature = captions.map(caption => caption.id).join(',');
+  if (signature === previous) return;
+  previous = signature;
+  const groups = new Map();
+  for (const caption of captions) {
+    const key = caption.speaker ?? caption.kind;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(caption);
+  }
+  const entries = [...groups].map(([key, turns]) => {
+    const known = typeof key === 'number';
+    const article = document.createElement('article');
+    article.style.setProperty('--speaker', known ? colors[(key - 1) % colors.length] : '#becdc3');
+    const heading = document.createElement('h2');
+    heading.textContent = known ? 'Speaker ' + key : (key === 'overlap' ? 'Overlapping speech' : 'Speech');
+    article.append(heading);
+    for (const turn of turns) {
+      const line = document.createElement('p');
+      line.lang = turn.mode === 'translate' ? 'en' : turn.language;
+      line.textContent = turn.text;
+      article.append(line);
+    }
+    return article;
+  });
+  output.replaceChildren(...entries);
+  empty.hidden = !!entries.length;
+}
+
+async function poll() {
+  try {
+    const response = await fetch('/v1/latest', { cache: 'no-store', signal: AbortSignal.timeout(2500) });
+    if (!response.ok) throw new Error('Companion unavailable');
+    const { captions } = await response.json();
+    render(captions);
+    status.textContent = 'Live captions';
+    empty.textContent = 'Waiting for speech';
+  } catch {
+    render([]);
+    status.textContent = 'Connection interrupted';
+    empty.textContent = 'Waiting for the companion';
+  } finally {
+    setTimeout(poll, 500);
+  }
+}
+poll();
+</script>
+</body>
+</html>

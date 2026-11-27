@@ -1,0 +1,3 @@
+-r requirements.txt
+openvr==2.12.1401
+Pillow==12.2.0
